@@ -1,0 +1,99 @@
+const path = require('path')
+const http = require('http')
+const express = require('express')
+const socketio = require('socket.io')
+const formatMessage = require('./utils/messages')
+const {userJoin,getCurrentUser,getLastUser} = require('./utils/users.js')
+const app = express();
+
+
+const port = 3001 || process.env.PORT
+
+const {Server} = require("socket.io")
+const cors = require("cors")
+app.use(cors())
+const server = http.createServer(app)
+
+const io = new Server(server,{
+  cors:{
+    origin:'http://localhost:3000',
+    methods:['GET',"POST"],
+  }
+})
+
+
+io.on('connection',socket=>{
+//Join Room
+socket.on('joinRoom',room=>{
+//Single Client
+ let user = userJoin({id:socket.id,room})
+ 
+
+socket.join(user.room)
+socket.emit('welcome',formatMessage('Angel Messenger','Welcome To My App'))
+//All of the clients except the client that is connecting
+socket.broadcast.to(user.room).emit('connects','A user has joined the app');
+})
+
+socket.on('send_message',(value)=>{
+  console.log(value)
+})
+
+
+//Run When client disconnects
+socket.on('disconnect',()=>{
+    let user  =  getLastUser({id:socket.id})
+  if(user){
+    io.to(user.room).emit('disconnects','A user has left the chat')
+  }
+})
+//Listen for chat message
+socket.on('chatMessage',(msg)=>{
+    console.log(socket.id)
+    let user  =  getCurrentUser({id:socket.id})
+    console.log(user)
+    if(user){
+        io.to(user.room).emit('userMessage',msg)
+        console.log(user.room)
+      }
+    
+})
+
+console.log('Joined')
+})
+server.listen(port,()=>console.log(`Server Running on ${port}`))
+
+
+
+
+//Socket IO Tutorials
+/**
+ * socket.emit(key,value)
+ * ------------------------
+ * socket.emit sends information from the back end of the system, 
+ * to the front end of the system. It can be accessed from the
+ * front end with socket.on(key,value=>{
+    console.log(value)
+})
+
+Modes
+Single Client
+socket.emit()
+
+All of the clients except the client that is connecting
+socket.broadcast.emit();
+
+All the clients in general
+io.emit()
+
+Rooms
+
+Using 'to(user.room)' means you are only going to be emitting to the users
+in a room
+
+socket.broadcast.to(user.room).emit('connects','A user has joined the app');
+
+
+
+ * 
+ */

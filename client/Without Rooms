@@ -1,0 +1,64 @@
+const path = require('path')
+const http = require('http')
+const express = require('express')
+const socketio = require('socket.io')
+const formatMessage = require('./utils/messages')
+
+const app = express();
+app.use(express.static(path.join(__dirname,'client')))
+
+const port = 3000 || process.env.PORT
+
+
+const server= http.createServer(app)
+const io = socketio(server)
+
+
+io.on('connection',socket=>{
+console.log(`Socket Id ${socket.id}`)
+
+//Single Client
+socket.emit('welcome',formatMessage('Angel Messenger','Welcome To My App'))
+
+//All of the clients except the client that is connecting
+socket.broadcast.emit('connects','A user has joined the app');
+
+//Run When client disconnects
+socket.on('disconnect',()=>{
+    io.emit('disconnects','A user has left the chat')
+})
+
+//Listen for chat message
+socket.on('chatMessage',(msg)=>{
+    io.emit('userMessage',msg)
+})
+
+
+})
+server.listen(port,()=>console.log(`Server Running on ${port}`))
+
+
+
+
+//Socket IO Tutorials
+/**
+ * socket.emit(key,value)
+ * ------------------------
+ * socket.emit sends information from the back end of the system, 
+ * to the front end of the system. It can be accessed from the
+ * front end with socket.on(key,value=>{
+    console.log(value)
+})
+
+Modes
+Single Client
+socket.emit()
+
+All of the clients except the client that is connecting
+socket.broadcast.emit();
+
+All the clients in general
+io.emit()
+
+ * 
+ */

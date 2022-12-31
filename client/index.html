@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    .container {
+        display: flex;
+        height: 100%;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .control-container {
+        margin: 5px;
+        display: flex;
+        align-content: center;
+
+    }
+    .chatbox{
+        width: 500px;
+        height: 500px;
+        border-width: 1px;
+        border-color: black;
+        border-style:solid;
+        margin-bottom: 5px;
+
+    }
+    
+</style>
+
+<body>
+
+<div class="container">
+    <div class="chatbox">
+        <ul id="message-container" type="none">
+        
+        </ul>
+    </div>
+  <form id="form" action="">
+      <label for="message-input">Message</label>
+      <input type="text" id="message-input">
+      <button type="submit" id="send-button">Send</button>
+      <label for="room-input">Room</label>
+      <input type="text" id="room-input">
+      <button type="button" id="room-button">Join</button>
+  </form>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
