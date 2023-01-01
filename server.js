@@ -21,12 +21,20 @@ const cors = require("cors")
 app.use(cors())
 const server = http.createServer(app)
 
+/* 
 const io = new Server(server,{
   cors:{
     origin:'http://localhost:3000',
     methods:['GET',"POST"],
   }
-})
+}) */
+
+const io = new Server(server,{
+  cors:{
+    origin:'https://localhost/index.html',
+    methods:['GET',"POST"],
+  }
+}) 
 
 mongoose.connect(process.env.DB_URI, {
   useNewUrlParser:true,
