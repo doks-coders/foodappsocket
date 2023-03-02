@@ -7,7 +7,7 @@ const socketio = require('socket.io')
 
 const formatMessage = require('./utils/messages')
 
-const {userJoin,getCurrentUser,getLastUser} = require('./utils/users.js')
+const {userJoin,getCurrentUser,getLastUser,getSendUser} = require('./utils/users.js')
 const {getAllChatRooms,getSelectedChatRooms,getChosenChat,
   sendMessageToDatabase
 } = require('./utils/mongodata.js')
@@ -21,21 +21,21 @@ const cors = require("cors")
 app.use(cors())
 const server = http.createServer(app)
 
-/* 
 const io = new Server(server,{
   cors:{
-    origin:'http://localhost:3000',
+    origin:'https://foodappapi.onrender.com',
     methods:['GET',"POST"],
   }
-}) */
+})
 
+/*
 const io = new Server(server,{
   cors:{
-    origin:'https://localhost/index.html',
+    origin:['http://localhost:3002','http://localhost:3000'],
     methods:['GET',"POST"],
   }
-}) 
-
+})
+*/
 mongoose.connect(process.env.DB_URI, {
   useNewUrlParser:true,
   useUnifiedTopology:true,
@@ -52,10 +52,13 @@ io.on('connection',socket=>{
 //Join Room
 socket.on('joinRoom',room=>{
 //Single Client
- let user = userJoin({id:socket.id,room})
- console.log({id:socket.id,room})
- 
-socket.join(user.room)
+
+let {roomId,userId,type} = room
+ let user = userJoin({id:socket.id,roomId,userId,type})
+socket.join(socket.id)
+console.log(user)
+console.log('User Has Joined')
+
 socket.emit('welcome',formatMessage('Angel Messenger','Welcome To My App'))
 //All of the clients except the client that is connecting
 socket.broadcast.to(user.room).emit('connects','A user has joined the app');
@@ -63,56 +66,87 @@ socket.broadcast.to(user.room).emit('connects','A user has joined the app');
 
 
 socket.on('get_chatrooms',async(chatRoomarray)=>{
+
   let user  =  getCurrentUser({id:socket.id})
+  console.log({socketId:socket.id})
+  console.log('Trying to Get Chatrooms')
+  console.log({user})
   if(user){
     if(chatRoomarray.length){
       getSelectedChatRooms(chatRoomarray).then(val=>{
-        io.to(user.room).emit('selected_chatrooms',val)
-        console.log(user.room)
+        io.to(user.id).emit('selected_chatrooms',val)
+        
       })
     
   }
   }  
 })
 socket.on('send_roomid',async(roomid)=>{
-  console.log({roomid})
+ 
   let user  =  getCurrentUser({id:socket.id})
   if(user){
     if(roomid){
       getChosenChat(roomid).then(val=>{
-        io.to(user.room).emit('get_messages',val)
-        console.log(user.room)
+        io.to(user.id).emit('get_messages',val.messages)
       })
     
   }
-  }
+ }
 
 
 })
 
 
 socket.on('send_message',(value)=>{
-
  let user  =  getCurrentUser({id:socket.id})
-
  if(user){
   sendMessageToDatabase(value).then((val)=>{
-    getChosenChat(value.chatroomid).then(val=>{
-      io.to(user.room).emit('get_messages',val)
-      console.log('Message Sent Sucessfully')
-  
+    console.log({value})
+    getChosenChat(value.chatroomid).then(val=>{  
+      let {userId} = value 
+
+      let senderId =  getSendUser({userId})
+     // console.log({senderId})
+      io.to(user.id).emit('get_messages',val.messages)
+      if(senderId != 'error'){
+        io.to(senderId).emit('get_messages',val.messages)
+      }
     })
   })
-     
    }
-
-   
-
 // socket.emit('welcome',formatMessage('Angel Messenger','Welcome To My App'))
+})
+
+socket.on('alert-user',(value)=>{
+  let senderId =  getSendUser({userId:value.userId})
+
+  if(senderId != 'error'){
+    io.to(senderId).emit('order-accepted','')
+}
+})
+
+socket.on('placed-order',(value)=>{
+  let senderId =  getSendUser({userId:value.userId})
+
+  if(senderId != 'error'){
+    io.to(senderId).emit('order-placed','')
+}
 })
 
 
 //Run When client disconnects
+
+/*
+socket.on('disconnectChat',(roomid)=>{
+  let user  =  getLastUser({id:socket.id,room:roomid})
+ // socket.leave(roomid)
+if(user){
+  io.to(user.room).emit('disconnects','A user has left the chat')
+
+}
+})
+*/
+
 socket.on('disconnect',()=>{
     let user  =  getLastUser({id:socket.id})
   if(user){
@@ -121,17 +155,13 @@ socket.on('disconnect',()=>{
 })
 //Listen for chat message
 socket.on('chatMessage',(msg)=>{
-    console.log(socket.id)
     let user  =  getCurrentUser({id:socket.id})
-    console.log(user)
     if(user){
         io.to(user.room).emit('userMessage',msg)
-        console.log(user.room)
       }
-    
 })
 
-console.log('Joined')
+
 })
 server.listen(port,()=>console.log(`Server Running on ${port}`))
 
