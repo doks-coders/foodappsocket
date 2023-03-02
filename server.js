@@ -23,7 +23,7 @@ const server = http.createServer(app)
 
 const io = new Server(server,{
   cors:{
-    origin:'https://foodappapi.onrender.com',
+    origin:['http://localhost:3002','http://localhost:3000','https://localhost'],
     methods:['GET',"POST"],
   }
 })
