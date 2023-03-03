@@ -36,7 +36,7 @@ const io = new Server(server,{
   }
 })
 */
-mongoose.connect(process.env.DB_URI, {
+mongoose.connect(process.env.DB_SOCKET, {
   useNewUrlParser:true,
   useUnifiedTopology:true,
   useFindAndModify:true,
