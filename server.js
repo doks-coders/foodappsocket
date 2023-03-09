@@ -8,8 +8,11 @@ const socketio = require('socket.io')
 const formatMessage = require('./utils/messages')
 
 const {userJoin,getCurrentUser,getLastUser,getSendUser} = require('./utils/users.js')
-const {getAllChatRooms,getSelectedChatRooms,getChosenChat,
-  sendMessageToDatabase
+const {getAllChatRooms,
+  getSelectedChatRooms,
+  getChosenChat,
+  sendMessageToDatabase,
+  sendNotification
 } = require('./utils/mongodata.js')
 const app = express();
 
@@ -20,6 +23,14 @@ const {Server} = require("socket.io")
 const cors = require("cors")
 app.use(cors())
 const server = http.createServer(app)
+/*
+const io = new Server(server,{
+  cors:{
+    origin:'https://foodappapi.onrender.com',
+    methods:['GET',"POST"],
+  }
+})
+*/
 
 const io = new Server(server,{
   cors:{
@@ -28,14 +39,6 @@ const io = new Server(server,{
   }
 })
 
-/*
-const io = new Server(server,{
-  cors:{
-    origin:['http://localhost:3002','http://localhost:3000'],
-    methods:['GET',"POST"],
-  }
-})
-*/
 mongoose.connect(process.env.DB_SOCKET, {
   useNewUrlParser:true,
   useUnifiedTopology:true,
@@ -117,20 +120,27 @@ socket.on('send_message',(value)=>{
 // socket.emit('welcome',formatMessage('Angel Messenger','Welcome To My App'))
 })
 
-socket.on('alert-user',(value)=>{
-  let senderId =  getSendUser({userId:value.userId})
+socket.on('alert-order',(value)=>{
 
+  let senderId =  getSendUser({userId:value.userId})
+sendNotification(value.order).then((val)=>{
   if(senderId != 'error'){
-    io.to(senderId).emit('order-accepted','')
+
+    io.to(senderId).emit('order-accepted',val)
 }
+})
+
 })
 
 socket.on('placed-order',(value)=>{
   let senderId =  getSendUser({userId:value.userId})
+  sendNotification(value.order).then((val)=>{
+    if(senderId != 'error'){
+      io.to(senderId).emit('order-placed',val)
+  }
+  })
 
-  if(senderId != 'error'){
-    io.to(senderId).emit('order-placed','')
-}
+
 })
 
 

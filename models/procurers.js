@@ -12,6 +12,7 @@ const postSchema = mongoose.Schema({
     coverimage:String,
     location:String,
     testimonials:Array,
+    notifications:Array,
    
     deal:Array,  
     created:{
